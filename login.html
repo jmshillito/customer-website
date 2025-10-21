@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login - Customer Portal</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/supabase.min.js"></script>
+</head>
+<body>
+  <h1>Login</h1>
+
+  <form id="login-form">
+    <input type="email" id="email" placeholder="Email" required><br><br>
+    <input type="password" id="password" placeholder="Password" required><br><br>
+    <button type="submit">Login</button>
+  </form>
+
+  <p>Don’t have an account? <a href="signup.html">Sign up here</a>.</p>
+
+  <script>
+    // Initialize Supabase client
+    const supabaseUrl = 'https://muildbsxyjytdwztubrq.supabase.co'
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11aWxkYnN4eWp5dGR3enR1YnJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA3NzcyNTgsImV4cCI6MjA3NjM1MzI1OH0.kU-L8I3h-_ep80iNEP95g5VIBjbtynwfqH1SY_8jEjc'
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey)
+
+    const form = document.getElementById('login-form')
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault()
+
+      const email = document.getElementById('email').value.trim()
+      const password = document.getElementById('password').value.trim()
+
+      // Attempt login
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      })
+
+      if (error) {
+        alert('Login failed: ' + error.message)
+        return
+      }
+
+      const user = data.user
+      if (!user) {
+        alert('No user data returned.')
+        return
+      }
+
+      // Now check this user’s role in CUSTOMERS
+      const { data: customerData, error: fetchError } = await supabase
+        .from('CUSTOMERS')
+        .select('role')
+        .eq('user_uid', user.id)
+        .single()
+
+      if (fetchError) {
+        console.error(fetchError)
+        alert('Error fetching role — taking you to customer page by default.')
+        window.location.href = 'customers.html'
+        return
+      }
+
+      if (customerData?.role === 'OWNER') {
+        window.location.href = 'index.html' // Owner dashboard
+      } else {
+        window.location.href = 'customers.html' // Customer page
+      }
+    })
+  </script>
+</body>
+</html>
+

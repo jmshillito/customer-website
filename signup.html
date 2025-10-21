@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sign Up - Customer Portal</title>
+  <!-- Load browser-safe Supabase client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/supabase.min.js"></script>
+</head>
+<body>
+  <h1>Customer Sign Up</h1>
+
+  <form id="signup-form">
+    <input type="text" id="name" placeholder="Full Name" required><br><br>
+    <input type="email" id="email" placeholder="Email" required><br><br>
+    <input type="password" id="password" placeholder="Password" required><br><br>
+    <input type="text" id="address" placeholder="Address"><br><br>
+
+    <label for="district">District:</label>
+    <select id="district" required>
+      <option value="">Select</option>
+      <option value="EE">EE</option>
+      <option value="WB">WB</option>
+      <option value="NS">NS</option>
+      <option value="GT">GT</option>
+      <option value="BT">BT</option>
+    </select><br><br>
+
+    <button type="submit">Sign Up</button>
+  </form>
+
+  <p>Already have an account? <a href="login.html">Login here</a>.</p>
+
+  <script>
+    // Initialize Supabase
+    const supabaseUrl = 'https://muildbsxyjytdwztubrq.supabase.co'
+    const supabaseUrl = 'https://muildbsxyjytdwztubrq.supabase.co'
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11aWxkYnN4eWp5dGR3enR1YnJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA3NzcyNTgsImV4cCI6MjA3NjM1MzI1OH0.kU-L8I3h-_ep80iNEP95g5VIBjbtynwfqH1SY_8jEjc'
+
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey)
+
+    const form = document.getElementById('signup-form')
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault()
+
+      const name = document.getElementById('name').value.trim()
+      const email = document.getElementById('email').value.trim()
+      const password = document.getElementById('password').value.trim()
+      const address = document.getElementById('address').value.trim()
+      const district = document.getElementById('district').value
+
+      console.log('Signup clicked:', { name, email, district })
+
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: 'https://jmshillito.github.io/customer-website/login.html'
+          }
+        })
+
+        if (error) {
+          console.error('Signup error:', error)
+          alert('Signup failed: ' + error.message)
+          return
+        }
+
+        // If signup successful
+        if (data.user) {
+          console.log('User created:', data.user)
+        }
+
+        // Store basic info for later (optional)
+        localStorage.setItem('signup_name', name)
+        localStorage.setItem('signup_address', address)
+        localStorage.setItem('signup_district', district)
+
+        alert(
+          'Signup successful! Please check your email and confirm your address.\n\n' +
+          'After confirming, you’ll be redirected to the login page.'
+        )
+
+        form.reset()
+      } catch (err) {
+        console.error('Unexpected error:', err)
+        alert('Unexpected error: ' + err.message)
+      }
+    })
+  </script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Orders</title>
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js'
+
+    const supabaseUrl = 'https://muildbsxyjytdwztubrq.supabase.co'
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11aWxkYnN4eWp5dGR3enR1YnJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA3NzcyNTgsImV4cCI6MjA3NjM1MzI1OH0.kU-L8I3h-_ep80iNEP95g5VIBjbtynwfqH1SY_8jEjc'
+  
+const supabase = createClient(supabaseUrl, supabaseKey)
+    // Load customer info and their orders
+    async function loadCustomerData() {
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      if (userError || !user) {
+        window.location.href = 'login.html'
+        return
+      }
+
+      // Get the customer record
+      const { data: customer, error: custErr } = await supabase
+        .from('CUSTOMERS')
+        .select('id, name, address, district')
+        .eq('user_id', user.id)
+        .single()
+
+      if (custErr) {
+        console.error('Error loading customer:', custErr.message)
+        alert('Could not load your profile.')
+        return
+      }
+
+      // Display name/address/district
+      document.getElementById('cust-name').textContent = customer.name
+      document.getElementById('cust-address').textContent = customer.address
+      document.getElementById('cust-district').textContent = customer.district
+
+      // Load orders for this customer
+      const { data: orders, error: orderErr } = await supabase
+        .from('ORDERS')
+        .select('date, bottles, amount_paid, amount_due')
+        .eq('customer_id', customer.id)
+        .order('date', { ascending: false })
+
+      if (orderErr) {
+        console.error(orderErr)
+        return
+      }
+
+      const table = document.getElementById('order-rows')
+      if (orders.length === 0) {
+        table.innerHTML = `<tr><td colspan="4">No orders yet</td></tr>`
+      } else {
+        table.innerHTML = orders.map(o => `
+          <tr>
+            <td>${o.date}</td>
+            <td>${o.bottles}</td>
+            <td>$${o.amount_paid.toFixed(2)}</td>
+            <td>$${o.amount_due.toFixed(2)}</td>
+          </tr>
+        `).join('')
+      }
+
+      // Store customer.id for new orders
+      window.customerId = customer.id
+    }
+
+    // Add a new order
+    async function addOrder(event) {
+      event.preventDefault()
+
+      const bottles = parseInt(document.getElementById('bottles').value) || 0
+      const amountPaid = parseFloat(document.getElementById('amount_paid').value) || 0
+      const amountDue = parseFloat(document.getElementById('amount_due').value) || 0
+
+      if (!window.customerId) {
+        alert('Customer not loaded yet.')
+        return
+      }
+
+      const { error } = await supabase
+        .from('ORDERS')
+        .insert([{ 
+          customer_id: window.customerId, 
+          bottles, 
+          amount_paid: amountPaid, 
+          amount_due: amountDue 
+        }])
+
+      if (error) {
+        alert('Error adding order: ' + error.message)
+      } else {
+        alert('Order added successfully!')
+        loadCustomerData()
+        document.getElementById('order-form').reset()
+      }
+    }
+
+    async function logout() {
+      await supabase.auth.signOut()
+      window.location.href = 'login.html'
+    }
+
+    window.onload = loadCustomerData
+    window.addOrder = addOrder
+    window.logout = logout
+  </script>
+</head>
+<body>
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <h2>My Orders</h2>
+    <div style="text-align:right;">
+      <strong id="cust-name"><
